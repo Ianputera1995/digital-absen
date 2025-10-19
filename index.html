@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Absensi Sekolah</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .notification {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        .live-indicator {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .sync-indicator {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 h-full font-sans">
+    <!-- Sync Status Indicator -->
+    <div id="syncIndicator" class="sync-indicator hidden">
+        <div class="bg-white rounded-lg shadow-lg px-4 py-2 flex items-center space-x-2">
+            <div id="syncIcon" class="w-3 h-3 rounded-full"></div>
+            <span id="syncText" class="text-sm font-medium"></span>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <div class="text-center">
+                <div class="mx-auto h-20 w-20 bg-blue-600 rounded-full flex items-center justify-center mb-6">
+                    <i class="fas fa-graduation-cap text-3xl text-white"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900">Sistem Absensi Sekolah</h2>
+                <p class="mt-2 text-gray-600">Masuk dengan kode unik Anda</p>
+            </div>
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <form class="space-y-6" onsubmit="handleLogin(event)">
+                    <div>
+                        <label for="uniqueCode" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-key mr-2 text-blue-600"></i>Kode Unik
+                        </label>
+                        <input id="uniqueCode" type="text" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg font-mono uppercase" 
+                               placeholder="Masukkan kode unik">
+                        <div class="mt-3 text-xs text-gray-500 space-y-1">
+                            <p><span class="font-semibold text-purple-600">ADM001</span> - Admin</p>
+                            <p><span class="font-semibold text-blue-600">GRU001</span> - Guru Matematika</p>
+                            <p><span class="font-semibold text-green-600">WAL001</span> - Wali Kelas X-1</p>
+                            <p><span class="font-semibold text-yellow-600">KPS001</span> - Kepala Sekolah</p>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-200 font-medium">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Masuk ke Sistem
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="hidden min-h-full">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="flex justify-between items-center px-6 py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-semibold text-gray-900" id="dashboardTitle">Dashboard</h1>
+                        <p class="text-sm text-gray-500" id="schoolName">SMA Negeri 1 Jakarta</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-gray-900" id="currentUser">User</p>
+                        <p class="text-xs text-gray-500" id="currentRole">Role</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-mono" id="userCode">CODE</span>
+                        <button onclick="logout()" class="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex h-full">
+            <!-- Sidebar -->
+            <nav class="bg-gray-900 text-white w-64 min-h-screen">
+                <div class="p-4">
+                    <ul class="space-y-2" id="sidebarMenu">
+                        <!-- Menu items will be populated by JavaScript -->
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6 overflow-auto bg-gray-50">
+                <div id="mainContent" class="fade-in">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notifications" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Modal Container -->
+    <div id="modalContainer" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-6xl w-full max-h-full overflow-auto">
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Server Configuration for Real-time Data
+        const SERVER_CONFIG = {
+            baseUrl: window.location.origin + '/api',
+            endpoints: {
+                sync: '/sync',
+                save: '/save',
+                load: '/load',
+                realtime: '/realtime'
+            },
+            syncInterval: 5000, // 5 seconds
+            retryAttempts: 3,
+            retryDelay: 2000 // 2 seconds
+        };
+
+        // Network and Sync Status
+        let isOnline = navigator.onLine;
+        let syncStatus = 'offline';
+        let syncInterval = null;
+        let operationQueue = [];
+
+        // Database dengan sistem kode unik dan auto-save
+        let database = {
+            users: [
+                { 
+                    id: 1, 
+                    uniqueCode: 'ADM001', 
+                    type: 'admin', 
+                    name: 'Administrator Sistem', 
+                    active: true,
+                    createdAt: '2024-01-01'
+                },
+                { 
+                    id: 2, 
+                    uniqueCode: 'GRU001', 
+                    type: 'guru', 
+                    name: 'Budi Santoso', 
+                    subject: 'Matematika', 
+                    active: true,
+                    createdAt: '2024-01-01'
+                },
+                { 
+                    id: 3, 
+                    uniqueCode: 'GRU002', 
+                    type: 'guru', 
+                    name: 'Siti Rahayu', 
+                    subject: 'Bahasa Indonesia', 
+                    active: true,
+                    createdAt: '2024-01-01'
+                },
+                { 
+                    id: 4, 
+                    uniqueCode: 'WAL001', 
+                    type: 'wali', 
+                    name: 'Ahmad Fauzi', 
+                    class: 'X-1', 
+                    active: true,
+                    createdAt: '2024-01-01'
+                },
+                { 
+                    id: 5, 
+                    uniqueCode: 'WAL002', 
+                    type: 'wali', 
+                    name: 'Siti Aminah', 
+                    class: 'X-2', 
+                    active: true,
+                    createdAt: '2024-01-01'
+                },
+                { 
+                    id: 6, 
+                    uniqueCode: 'KPS001', 
+                    type: 'kepala', 
+                    name: 'Dr. Ahmad Wijaya', 
+                    active: true,
+                    createdAt: '2024-01-01'
+                }
+            ],
+            students: [
+                { id: 1, name: 'Andi Pratama', nisn: '1234567890', class: 'X-1', phone: '081234567890' },
+                { id: 2, name: 'Sari Dewi', nisn: '1234567891', class: 'X-1', phone: '081234567891' },
+                { id: 3, name: 'Budi Setiawan', nisn: '1234567892', class: 'X-2', phone: '081234567892' },
+                { id: 4, name: 'Maya Sari', nisn: '1234567893', class: 'XI-1', phone: '081234567893' },
+                { id: 5, name: 'Rizki Pratama', nisn: '1234567894', class: 'X-1', phone: '081234567894' },
+                { id: 6, name: 'Dewi Lestari', nisn: '1234567895', class: 'X-2', phone: '081234567895' }
+            ],
+            teachers: [
+                { id: 1, name: 'Budi Santoso', subject: 'Matematika', phone: '081234567896', uniqueCode: 'GRU001' },
+                { id: 2, name: 'Siti Rahayu', subject: 'Bahasa Indonesia', phone: '081234567897', uniqueCode: 'GRU002' },
+                { id: 3, name: 'Ahmad Fauzi', subject: 'Fisika', phone: '081234567898', uniqueCode: 'GRU003' }
+            ],
+            attendance: [
+                { 
+                    id: 1, 
+                    studentId: 1, 
+                    teacherId: 1, 
+                    date: '2024-01-15', 
+                    time: '08:30:00',
+                    status: 'hadir', 
+                    subject: 'Matematika', 
+                    class: 'X-1', 
+                    location: 'Ruang Kelas X-1, Lantai 2',
+                    material: 'Persamaan Linear Satu Variabel - Pengenalan konsep dasar dan contoh soal'
+                },
+                { 
+                    id: 2, 
+                    studentId: 2, 
+                    teacherId: 1, 
+                    date: '2024-01-15', 
+                    time: '08:30:00',
+                    status: 'alpha', 
+                    subject: 'Matematika', 
+                    class: 'X-1', 
+                    location: 'Ruang Kelas X-1, Lantai 2',
+                    material: 'Persamaan Linear Satu Variabel - Pengenalan konsep dasar dan contoh soal'
+                },
+                { 
+                    id: 3, 
+                    studentId: 1, 
+                    teacherId: 2, 
+                    date: '2024-01-16', 
+                    time: '10:00:00',
+                    status: 'sakit', 
+                    subject: 'Bahasa Indonesia', 
+                    class: 'X-1', 
+                    location: 'Ruang Kelas X-1, Lantai 2',
+                    material: 'Teks Eksposisi - Struktur dan ciri-ciri teks eksposisi'
+                }
+            ],
+            teacherAttendance: [
+                {
+                    id: 1,
+                    teacherId: 1,
+                    date: '2024-01-15',
+                    time: '08:25:00',
+                    location: 'Ruang Kelas X-1, Lantai 2',
+                    coordinates: '-6.200000, 106.816666',
+                    subject: 'Matematika',
+                    class: 'X-1',
+                    material: 'Persamaan Linear Satu Variabel - Pengenalan konsep dasar dan contoh soal'
+                },
+                {
+                    id: 2,
+                    teacherId: 2,
+                    date: '2024-01-16',
+                    time: '10:00:00',
+                    location: 'Ruang Kelas X-1, Lantai 2',
+                    coordinates: '-6.200000, 106.816666',
+                    subject: 'Bahasa Indonesia',
+                    class: 'X-1',
+                    material: 'Teks Eksposisi - Struktur dan ciri-ciri teks eksposisi'
+                }
+            ]
+        };
+
+        let currentUser = null;
+
+        // Server Communication Functions
+        async function syncWithServer(operation, data = null) {
+            if (!isOnline) {
+                // Queue operation for later
+                operationQueue.push({ operation, data, timestamp: Date.now() });
+                return { success: false, error: 'Offline - queued for sync' };
+            }
+
+            const url = `${SERVER_CONFIG.baseUrl}${SERVER_CONFIG.endpoints[operation]}`;
+            
+            for (let attempt = 1; attempt <= SERVER_CONFIG.retryAttempts; attempt++) {
+                try {
+                    showSyncStatus('syncing');
+                    
+                    const response = await fetch(url, {
+                        method: data ? 'POST' : 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-User-Code': currentUser?.uniqueCode || 'anonymous',
+                            'X-Timestamp': Date.now().toString()
+                        },
+                        body: data ? JSON.stringify(data) : null
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        showSyncStatus('synced');
+                        return { success: true, data: result };
+                    } else {
+                        throw new Error(`Server error: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.warn(`Sync attempt ${attempt} failed:`, error);
+                    
+                    if (attempt < SERVER_CONFIG.retryAttempts) {
+                        await new Promise(resolve => setTimeout(resolve, SERVER_CONFIG.retryDelay));
+                    } else {
+                        showSyncStatus('error');
+                        // Fallback to localStorage
+                        return { success: false, error: error.message };
+                    }
+                }
+            }
+        }
+
+        async function loadFromServer() {
+            const result = await syncWithServer('load');
+            
+            if (result.success && result.data) {
+                // Merge server data with local data
+                database = mergeData(database, result.data);
+                saveToLocalStorage();
+                console.log('Data loaded from server');
+            } else {
+                // Fallback to localStorage
+                loadFromLocalStorage();
+                console.log('Fallback to localStorage');
+            }
+        }
+
+        async function saveToServer(data) {
+            const result = await syncWithServer('save', data);
+            
+            if (!result.success) {
+                // Save to localStorage as backup
+                saveToLocalStorage();
+            }
+            
+            return result;
+        }
+
+        function mergeData(localData, serverData) {
+            // Simple merge strategy - server data takes precedence for conflicts
+            // In production, implement proper conflict resolution based on timestamps
+            return {
+                ...localData,
+                ...serverData,
+                // Merge arrays by timestamp or ID
+                teacherAttendance: mergeArrays(localData.teacherAttendance, serverData.teacherAttendance || [])
+            };
+        }
+
+        function mergeArrays(localArray, serverArray) {
+            const merged = [...localArray];
+            
+            serverArray.forEach(serverItem => {
+                const localIndex = merged.findIndex(item => item.id === serverItem.id);
+                if (localIndex >= 0) {
+                    // Update existing item if server version is newer
+                    merged[localIndex] = serverItem;
+                } else {
+                    // Add new item
+                    merged.push(serverItem);
+                }
+            });
+            
+            return merged;
+        }
+
+        // Network Monitoring
+        function setupNetworkMonitoring() {
+            window.addEventListener('online', () => {
+                isOnline = true;
+                showNotification('Kembali online - menyinkronkan data...', 'success');
+                processOfflineQueue();
+            });
+
+            window.addEventListener('offline', () => {
+                isOnline = false;
+                showSyncStatus('offline');
+                showNotification('Mode offline - data akan disinkronkan saat online', 'warning');
+            });
+        }
+
+        async function processOfflineQueue() {
+            if (operationQueue.length === 0) return;
+
+            showNotification(`Memproses ${operationQueue.length} operasi offline...`, 'info');
+            
+            const queue = [...operationQueue];
+            operationQueue = [];
+
+            for (const operation of queue) {
+                await syncWithServer(operation.operation, operation.data);
+            }
+
+            showNotification('Sinkronisasi offline selesai!', 'success');
+        }
+
+        // Auto-sync setup
+        function setupAutoSync() {
+            if (syncInterval) clearInterval(syncInterval);
+            
+            syncInterval = setInterval(async () => {
+                if (isOnline && currentUser) {
+                    await syncWithServer('sync', { 
+                        lastSync: localStorage.getItem('lastSyncTime') || 0 
+                    });
+                    localStorage.setItem('lastSyncTime', Date.now().toString());
+                }
+            }, SERVER_CONFIG.syncInterval);
+        }
+
+        // Sync Status Indicator
+        function showSyncStatus(status) {
+            const indicator = document.getElementById('syncIndicator');
+            const icon = document.getElementById('syncIcon');
+            const text = document.getElementById('syncText');
+            
+            syncStatus = status;
+            
+            const statusConfig = {
+                syncing: { color: 'bg-blue-500', text: 'Sinkronisasi...', show: true },
+                synced: { color: 'bg-green-500', text: 'Tersinkronisasi', show: true },
+                error: { color: 'bg-red-500', text: 'Error Sync', show: true },
+                offline: { color: 'bg-gray-500', text: 'Offline', show: true }
+            };
+            
+            const config = statusConfig[status];
+            if (config) {
+                icon.className = `w-3 h-3 rounded-full ${config.color}`;
+                text.textContent = config.text;
+                
+                if (config.show) {
+                    indicator.classList.remove('hidden');
+                    // Auto-hide after 3 seconds for success states
+                    if (status === 'synced') {
+                        setTimeout(() => {
+                            indicator.classList.add('hidden');
+                        }, 3000);
+                    }
+                } else {
+                    indicator.classList.add('hidden');
+                }
+            }
+        }
+
+        // Database Auto-Save System
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('attendanceSystemDB', JSON.stringify(database));
+                console.log('Database saved to localStorage');
+            } catch (error) {
+                console.error('Error saving to localStorage:', error);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem('attendanceSystemDB');
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    // Merge with default data to ensure all required fields exist
+                    database = { ...database, ...parsedData };
+                    console.log('Database loaded from localStorage');
+                    return true;
+                }
+            } catch (error) {
+                console.error('Error loading from localStorage:', error);
+            }
+            return false;
+        }
+
+        // Auto-save whenever database changes
+        async function updateDatabase(callback) {
+            if (typeof callback === 'function') {
+                callback();
+            }
+            
+            // Save to localStorage immediately
+            saveToLocalStorage();
+            
+            // Try to save to server
+            if (currentUser) {
+                await saveToServer({
+                    database: database,
+                    userCode: currentUser.uniqueCode,
+                    timestamp: Date.now()
+                });
+            }
+        }
+
+        // Generate unique ID for new records
+        function generateId(tableName) {
+            const table = database[tableName];
+            return table.length > 0 ? Math.max(...table.map(item => item.id)) + 1 : 1;
+        }
+
+        // Generate unique code for users
+        function generateUniqueCode(type) {
+            const prefix = {
+                'admin': 'ADM',
+                'guru': 'GRU', 
+                'wali': 'WAL',
+                'kepala': 'KPS'
+            };
+            
+            const existingCodes = database.users
+                .filter(u => u.type === type)
+                .map(u => parseInt(u.uniqueCode.substring(3)))
+                .filter(num => !isNaN(num));
+            
+            const nextNumber = existingCodes.length > 0 ? Math.max(...existingCodes) + 1 : 1;
+            return `${prefix[type]}${nextNumber.toString().padStart(3, '0')}`;
+        }
+
+        // Menu configurations for different user types
+        const menuConfigs = {
+            admin: [
+                { id: 'dashboard', icon: 'fas fa-tachometer-alt', text: 'Dashboard', active: true },
+                { id: 'users', icon: 'fas fa-users-cog', text: 'Kelola User' },
+                { id: 'students', icon: 'fas fa-users', text: 'Kelola Siswa' },
+                { id: 'attendance-reports', icon: 'fas fa-clipboard-list', text: 'Laporan Absensi' },
+                { id: 'teacher-status', icon: 'fas fa-user-check', text: 'Status Kehadiran Guru' },
+                { id: 'attendance-categories', icon: 'fas fa-exclamation-triangle', text: 'Kategori Kehadiran' },
+                { id: 'whatsapp-messages', icon: 'fas fa-comments', text: 'Pesan WhatsApp' }
+            ],
+            guru: [
+                { id: 'dashboard', icon: 'fas fa-tachometer-alt', text: 'Dashboard', active: true },
+                { id: 'input-attendance', icon: 'fas fa-camera', text: 'Input Absensi' },
+                { id: 'my-attendance-reports', icon: 'fas fa-history', text: 'Rekapan Absensi Saya' },
+                { id: 'teacher-status', icon: 'fas fa-user-check', text: 'Status Kehadiran Guru' }
+            ],
+            wali: [
+                { id: 'dashboard', icon: 'fas fa-tachometer-alt', text: 'Dashboard', active: true },
+                { id: 'class-attendance', icon: 'fas fa-eye', text: 'Absensi Kelas' },
+                { id: 'teacher-status', icon: 'fas fa-user-check', text: 'Status Kehadiran Guru' },
+                { id: 'class-categories', icon: 'fas fa-exclamation-triangle', text: 'Kategori Kehadiran' },
+                { id: 'class-whatsapp', icon: 'fas fa-comments', text: 'Pesan WhatsApp' }
+            ],
+            kepala: [
+                { id: 'dashboard', icon: 'fas fa-tachometer-alt', text: 'Dashboard', active: true },
+                { id: 'all-attendance', icon: 'fas fa-users', text: 'Absensi Siswa' },
+                { id: 'teacher-summary', icon: 'fas fa-chalkboard-teacher', text: 'Ringkasan Guru' },
+                { id: 'teacher-status', icon: 'fas fa-user-check', text: 'Status Kehadiran Guru' },
+                { id: 'school-categories', icon: 'fas fa-exclamation-triangle', text: 'Kategori Kehadiran' },
+                { id: 'school-whatsapp', icon: 'fas fa-comments', text: 'Pesan WhatsApp' }
+            ]
+        };
+
+        // Login handler dengan kode unik
+        function handleLogin(event) {
+            event.preventDefault();
+            const uniqueCode = document.getElementById('uniqueCode').value.toUpperCase().trim();
+
+            if (!uniqueCode) {
+                showNotification('Silakan masukkan kode unik!', 'error');
+                return;
+            }
+
+            const user = database.users.find(u => u.uniqueCode === uniqueCode && u.active);
+
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                initializeDashboard();
+                showNotification(`Selamat datang, ${user.name}!`, 'success');
+                
+                // Start auto-sync after login
+                setupAutoSync();
+            } else {
+                showNotification('Kode unik tidak valid atau akun tidak aktif!', 'error');
+                document.getElementById('uniqueCode').value = '';
+                document.getElementById('uniqueCode').focus();
+            }
+        }
+
+        // Initialize dashboard
+        function initializeDashboard() {
+            const roleNames = {
+                admin: 'Administrator',
+                guru: 'Guru',
+                wali: 'Wali Kelas',
+                kepala: 'Kepala Sekolah'
+            };
+
+            document.getElementById('dashboardTitle').textContent = `Dashboard ${roleNames[currentUser.type]}`;
+            document.getElementById('currentUser').textContent = currentUser.name;
+            document.getElementById('currentRole').textContent = roleNames[currentUser.type];
+            document.getElementById('userCode').textContent = currentUser.uniqueCode;
+            
+            renderSidebar();
+            renderDashboard();
+        }
+
+        // Render sidebar
+        function renderSidebar() {
+            const menu = menuConfigs[currentUser.type];
+            const sidebarMenu = document.getElementById('sidebarMenu');
+            
+            sidebarMenu.innerHTML = menu.map(item => `
+                <li>
+                    <button onclick="navigateTo('${item.id}')" 
+                            class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-800 transition duration-200 ${item.active ? 'bg-gray-800 border-l-4 border-blue-500' : ''}">
+                        <i class="${item.icon} mr-3 text-gray-300"></i>
+                        <span class="text-gray-100">${item.text}</span>
+                    </button>
+                </li>
+            `).join('');
+        }
+
+        // Navigation handler
+        function navigateTo(page) {
+            // Update active menu
+            document.querySelectorAll('#sidebarMenu button').forEach(btn => {
+                btn.classList.remove('bg-gray-800', 'border-l-4', 'border-blue-500');
+            });
+            event.target.closest('button').classList.add('bg-gray-800', 'border-l-4', 'border-blue-500');
+
+            // Render content based on page and user type
+            renderContent(page);
+        }
+
+        // Render content based on page
+        function renderContent(page) {
+            switch(page) {
+                case 'dashboard':
+                    renderDashboard();
+                    break;
+                case 'users':
+                    renderUsersManagement();
+                    break;
+                case 'students':
+                    renderStudentsManagement();
+                    break;
+                case 'attendance-reports':
+                    renderAttendanceReports();
+                    break;
+                case 'input-attendance':
+                    renderInputAttendance();
+                    break;
+                case 'my-attendance-reports':
+                    renderMyAttendanceReports();
+                    break;
+                case 'class-attendance':
+                    renderClassAttendance();
+                    break;
+                case 'all-attendance':
+                    renderAllAttendance();
+                    break;
+                case 'teacher-summary':
+                    renderTeacherSummary();
+                    break;
+                case 'teacher-status':
+                    renderTeacherStatus();
+                    break;
+                case 'attendance-categories':
+                    renderAttendanceCategories();
+                    break;
+                case 'whatsapp-messages':
+                    renderWhatsAppMessages();
+                    break;
+                case 'class-categories':
+                    renderClassCategories();
+                    break;
+                case 'class-whatsapp':
+                    renderClassWhatsApp();
+                    break;
+                case 'school-categories':
+                    renderSchoolCategories();
+                    break;
+                case 'school-whatsapp':
+                    renderSchoolWhatsApp();
+                    break;
+                default:
+                    renderDashboard();
+            }
+        }
+
+        // New Teacher Status Page
+        function renderTeacherStatus() {
+            const mainContent = document.getElementById('mainContent');
+            const isAdmin = currentUser.type === 'admin';
+            
+            // Get latest attendance for each teacher
+            const teacherStatusData = getLatestTeacherStatus();
+            const todayDate = new Date().toISOString().split('T')[0];
+            const todayAttendance = teacherStatusData.filter(ts => ts.date === todayDate);
+            
+            mainContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3">
+                            <h2 class="text-2xl font-bold text-gray-900">Status Kehadiran Guru</h2>
+                            <div class="flex items-center space-x-2 bg-green-50 border border-green-200 rounded-lg px-3 py-1">
+                                <div class="w-2 h-2 bg-green-500 rounded-full live-indicator"></div>
+                                <span class="text-sm font-medium text-green-700">Live Data</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="refreshTeacherStatus()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                                <i class="fas fa-sync-alt mr-2"></i>Refresh
+                            </button>
+                            ${isAdmin ? `
+                                <button onclick="exportTeacherStatus()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200">
+                                    <i class="fas fa-file-excel mr-2"></i>Export
+                                </button>
+                                <button onclick="showDeleteAllTeacherStatus()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition duration-200">
+                                    <i class="fas fa-trash mr-2"></i>Hapus Semua
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-lg shadow-sm border">
+                            <div class="flex items-center">
+                                <div class="p-2 bg-green-100 rounded-lg">
+                                    <i class="fas fa-user-check text-green-600"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-gray-600">Hadir Hari Ini</p>
+                                    <p class="text-xl font-bold">${todayAttendance.length}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border">
+                            <div class="flex items-center">
+                                <div class="p-2 bg-blue-100 rounded-lg">
+                                    <i class="fas fa-chalkboard-teacher text-blue-600"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-gray-600">Total Guru Aktif</p>
+                                    <p class="text-xl font-bold">${database.teachers.length}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border">
+                            <div class="flex items-center">
+                                <div class="p-2 bg-purple-100 rounded-lg">
+                                    <i class="fas fa-map-marker-alt text-purple-600"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-gray-600">Lokasi Unik</p>
+                                    <p class="text-xl font-bold">${new Set(teacherStatusData.map(ts => ts.coordinates)).size}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border">
+                            <div class="flex items-center">
+                                <div class="p-2 bg-yellow-100 rounded-lg">
+                                    <i class="fas fa-database text-yellow-600"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-gray-600">Total Record</p>
+                                    <p class="text-xl font-bold">${database.teacherAttendance.length}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Teacher Status Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                            <h3 class="text-lg font-semibold text-gray-900">Status Kehadiran Real-time</h3>
+                            <div class="text-sm text-gray-500 flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                <span>Data tersinkronisasi dengan server</span>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guru</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kelas</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mata Pelajaran</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode Lokasi</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu Check-in</th>
+                                        ${isAdmin ? '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>' : ''}
+                                    </tr>
+                                </thead>
+                                <tbody id="teacherStatusTableBody" class="bg-white divide-y divide-gray-200">
+                                    ${renderTeacherStatusRows(teacherStatusData, isAdmin)}
+                                </tbody>
+                            </table>
+                            ${teacherStatusData.length === 0 ? `
+                                <div class="text-center py-12">
+                                    <i class="fas fa-user-clock text-gray-300 text-6xl mb-4"></i>
+                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada Data Kehadiran Guru</h3>
+                                    <p class="text-gray-500">Data kehadiran guru akan muncul setelah guru melakukan check-in.</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getLatestTeacherStatus() {
+            // Get latest attendance record for each teacher
+            const teacherStatusMap = new Map();
+            
+            // Sort by date and time (newest first)
+            const sortedAttendance = [...database.teacherAttendance].sort((a, b) => {
+                const dateTimeA = new Date(`${a.date} ${a.time}`);
+                const dateTimeB = new Date(`${b.date} ${b.time}`);
+                return dateTimeB - dateTimeA;
+            });
+            
+            // Get latest record for each teacher
+            sortedAttendance.forEach(attendance => {
+                if (!teacherStatusMap.has(attendance.teacherId)) {
+                    const teacher = database.teachers.find(t => t.id === attendance.teacherId);
+                    if (teacher) {
+                        teacherStatusMap.set(attendance.teacherId, {
+                            ...attendance,
+                            teacherName: teacher.name,
+                            teacherCode: teacher.uniqueCode
+                        });
+                    }
+                }
+            });
+            
+            return Array.from(teacherStatusMap.values());
+        }
+
+        function renderTeacherStatusRows(teacherStatusData, isAdmin) {
+            const todayDate = new Date().toISOString().split('T')[0];
+            
+            return teacherStatusData.map(status => {
+                const isToday = status.date === todayDate;
+                const dateTime = new Date(`${status.date} ${status.time}`);
+                const timeAgo = getTimeAgo(dateTime);
+                
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <i class="fas fa-chalkboard-teacher text-blue-600"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">${status.teacherName}</div>
+                                    <div class="text-sm text-gray-500">${status.teacherCode}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ${status.class}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                ${status.subject}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border">
+                                <div class="flex items-center">
+                                    <i class="fas fa-map-pin text-red-500 mr-2"></i>
+                                    <span>${status.coordinates}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                isToday ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            }">
+                                <div class="w-1.5 h-1.5 rounded-full ${isToday ? 'bg-green-500' : 'bg-gray-500'} mr-1.5"></div>
+                                ${isToday ? 'Hadir Hari Ini' : 'Check-in Sebelumnya'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${status.date}</div>
+                            <div class="text-sm text-gray-500">${status.time}</div>
+                            <div class="text-xs text-gray-400">${timeAgo}</div>
+                        </td>
+                        ${isAdmin ? `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <button onclick="editTeacherStatus(${status.id})" class="text-blue-600 hover:text-blue-900" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="viewLocationOnMap('${status.coordinates}')" class="text-green-600 hover:text-green-900" title="Lihat di Peta">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        ` : ''}
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Baru saja';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
+            if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari lalu`;
+            
+            return date.toLocaleDateString('id-ID');
+        }
+
+        async function refreshTeacherStatus() {
+            showNotification('Memperbarui data kehadiran guru...', 'info');
+            
+            // Sync with server
+            await syncWithServer('sync');
+            
+            // Re-render the page
+            renderTeacherStatus();
+            
+            showNotification('Data kehadiran guru berhasil diperbarui!', 'success');
+        }
+
+        function exportTeacherStatus() {
+            const teacherStatusData = getLatestTeacherStatus();
+            
+            if (teacherStatusData.length === 0) {
+                showNotification('Tidak ada data untuk diekspor!', 'error');
+                return;
+            }
+
+            // Create CSV content
+            const headers = ['Nama Guru', 'Kode Guru', 'Kelas', 'Mata Pelajaran', 'Kode Lokasi', 'Tanggal', 'Waktu', 'Status'];
+            const csvContent = [
+                headers.join(','),
+                ...teacherStatusData.map(status => {
+                    const todayDate = new Date().toISOString().split('T')[0];
+                    const isToday = status.date === todayDate;
+                    return [
+                        `"${status.teacherName}"`,
+                        status.teacherCode,
+                        status.class,
+                        `"${status.subject}"`,
+                        status.coordinates,
+                        status.date,
+                        status.time,
+                        isToday ? 'Hadir Hari Ini' : 'Check-in Sebelumnya'
+                    ].join(',');
+                })
+            ].join('\n');
+
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `status_kehadiran_guru_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showNotification(`Status kehadiran ${teacherStatusData.length} guru berhasil diekspor!`, 'success');
+        }
+
+        function editTeacherStatus(attendanceId) {
+            const attendance = database.teacherAttendance.find(ta => ta.id === attendanceId);
+            if (!attendance) return;
+            
+            const teacher = database.teachers.find(t => t.id === attendance.teacherId);
+            
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <div class="p-6 max-w-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold text-gray-900">Edit Status Kehadiran Guru</h3>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 class="font-medium text-blue-800 mb-2">Informasi Guru</h4>
+                        <div class="text-sm text-blue-700">
+                            <p><strong>Nama:</strong> ${teacher?.name}</p>
+                            <p><strong>Kode:</strong> ${teacher?.uniqueCode}</p>
+                        </div>
+                    </div>
+                    
+                    <form onsubmit="updateTeacherStatus(event, ${attendanceId})" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="editStatusDate" class="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
+                                <input type="date" id="editStatusDate" value="${attendance.date}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="editStatusTime" class="block text-sm font-medium text-gray-700 mb-2">Waktu</label>
+                                <input type="time" id="editStatusTime" value="${attendance.time}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="editStatusClass" class="block text-sm font-medium text-gray-700 mb-2">Kelas</label>
+                            <select id="editStatusClass" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="X-1" ${attendance.class === 'X-1' ? 'selected' : ''}>X-1</option>
+                                <option value="X-2" ${attendance.class === 'X-2' ? 'selected' : ''}>X-2</option>
+                                <option value="XI-1" ${attendance.class === 'XI-1' ? 'selected' : ''}>XI-1</option>
+                                <option value="XI-2" ${attendance.class === 'XI-2' ? 'selected' : ''}>XI-2</option>
+                                <option value="XII-1" ${attendance.class === 'XII-1' ? 'selected' : ''}>XII-1</option>
+                                <option value="XII-2" ${attendance.class === 'XII-2' ? 'selected' : ''}>XII-2</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="editStatusCoordinates" class="block text-sm font-medium text-gray-700 mb-2">Kode Lokasi (Koordinat)</label>
+                            <input type="text" id="editStatusCoordinates" value="${attendance.coordinates}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="-6.200000, 106.816666">
+                            <p class="text-xs text-gray-500 mt-1">Format: latitude, longitude</p>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                Batal
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-save mr-2"></i>Update Status
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.getElementById('modalContainer').classList.remove('hidden');
+        }
+
+        async function updateTeacherStatus(event, attendanceId) {
+            event.preventDefault();
+            
+            const date = document.getElementById('editStatusDate').value;
+            const time = document.getElementById('editStatusTime').value;
+            const className = document.getElementById('editStatusClass').value;
+            const coordinates = document.getElementById('editStatusCoordinates').value.trim();
+            
+            if (!date || !time || !className || !coordinates) {
+                showNotification('Semua field harus diisi!', 'error');
+                return;
+            }
+            
+            // Validate coordinates format
+            const coordPattern = /^-?\d+\.?\d*,\s*-?\d+\.?\d*$/;
+            if (!coordPattern.test(coordinates)) {
+                showNotification('Format koordinat tidak valid! Gunakan format: latitude, longitude', 'error');
+                return;
+            }
+            
+            await updateDatabase(() => {
+                const attendanceIndex = database.teacherAttendance.findIndex(ta => ta.id === attendanceId);
+                if (attendanceIndex !== -1) {
+                    database.teacherAttendance[attendanceIndex] = {
+                        ...database.teacherAttendance[attendanceIndex],
+                        date: date,
+                        time: time,
+                        class: className,
+                        coordinates: coordinates
+                    };
+                }
+            });
+            
+            closeModal();
+            renderTeacherStatus();
+            showNotification('Status kehadiran guru berhasil diupdate!', 'success');
+        }
+
+        function showDeleteAllTeacherStatus() {
+            if (database.teacherAttendance.length === 0) {
+                showNotification('Tidak ada data kehadiran guru untuk dihapus!', 'info');
+                return;
+            }
+            
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold text-red-600">Konfirmasi Hapus Semua Data Kehadiran Guru</h3>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
+                                <div>
+                                    <h4 class="font-medium text-red-800">PERINGATAN KERAS!</h4>
+                                    <p class="text-red-700 text-sm mt-1">Tindakan ini akan menghapus SEMUA data kehadiran guru secara permanen dan tidak dapat dibatalkan.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="text-gray-700 mb-4">Apakah Anda yakin ingin menghapus <strong>SEMUA ${database.teacherAttendance.length}</strong> data kehadiran guru?</p>
+                        
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-medium text-gray-800 mb-2">Data yang akan dihapus:</h4>
+                            <div class="text-sm text-gray-600 space-y-1">
+                                <p>• Total record kehadiran: ${database.teacherAttendance.length}</p>
+                                <p>• Guru yang terdampak: ${new Set(database.teacherAttendance.map(ta => ta.teacherId)).size}</p>
+                                <p>• Rentang tanggal: ${getDateRange()}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="text-sm text-yellow-800">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <strong>Catatan:</strong> Data akan dihapus dari server web secara real-time dan tidak dapat dipulihkan.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button onclick="closeModal()" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                            Batal
+                        </button>
+                        <button onclick="confirmDeleteAllTeacherStatus()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                            <i class="fas fa-trash mr-2"></i>Hapus Semua Data
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modalContainer').classList.remove('hidden');
+        }
+
+        function getDateRange() {
+            if (database.teacherAttendance.length === 0) return 'Tidak ada data';
+            
+            const dates = database.teacherAttendance.map(ta => ta.date).sort();
+            const firstDate = dates[0];
+            const lastDate = dates[dates.length - 1];
+            
+            if (firstDate === lastDate) {
+                return firstDate;
+            } else {
+                return `${firstDate} s/d ${lastDate}`;
+            }
+        }
+
+        async function confirmDeleteAllTeacherStatus() {
+            const totalRecords = database.teacherAttendance.length;
+            
+            await updateDatabase(() => {
+                database.teacherAttendance = [];
+            });
+            
+            closeModal();
+            renderTeacherStatus();
+            showNotification(`Semua ${totalRecords} data kehadiran guru berhasil dihapus!`, 'success');
+        }
+
+        function viewLocationOnMap(coordinates) {
+            const [lat, lon] = coordinates.split(', ');
+            const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+            window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
+        }
+
+        // Dashboard renderers for different user types
+        function renderDashboard() {
+            const mainContent = document.getElementById('mainContent');
+            
+            switch(currentUser.type) {
+                case 'admin':
+                    mainContent.innerHTML = renderAdminDashboard();
+                    break;
+                case 'guru':
+                    mainContent.innerHTML = renderGuruDashboard();
+                    break;
+                case 'wali':
+                    mainContent.innerHTML = renderWaliDashboard();
+                    break;
+                case 'kepala':
+                    mainContent.innerHTML = renderKepalaDashboard();
+                    break;
+            }
+        }
+
+        function renderAdminDashboard() {
+            const totalStudents = database.students.length;
+            const totalTeachers = database.teachers.length;
+            const totalUsers = database.users.length;
+            const todayAttendance = database.attendance.filter(a => a.date === new Date().toISOString().split('T')[0]).length;
+            
+            // Attendance statistics
+            const totalAttendance = database.attendance.length;
+            const presentCount = database.attendance.filter(a => a.status === 'hadir').length;
+            const absentCount = database.attendance.filter(a => a.status === 'alpha').length;
+            const sickCount = database.attendance.filter(a => a.status === 'sakit').length;
+            const permitCount = database.attendance.filter(a => a.status === 'izin').length;
+            
+            return `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-3xl font-bold text-gray-900">Dashboard Administrator</h2>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                    <i class="fas fa-users text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Siswa</p>
+                                    <p class="text-2xl font-bold text-gray-900">${totalStudents}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                    <i class="fas fa-chalkboard-teacher text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Guru</p>
+                                    <p class="text-2xl font-bold text-gray-900">${totalTeachers}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                                    <i class="fas fa-users-cog text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total User</p>
+                                    <p class="text-2xl font-bold text-gray-900">${totalUsers}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                                    <i class="fas fa-clipboard-check text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Absensi Hari Ini</p>
+                                    <p class="text-2xl font-bold text-gray-900">${todayAttendance}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <button onclick="navigateTo('users')" class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition duration-200 group">
+                                <i class="fas fa-users-cog text-2xl text-gray-400 group-hover:text-blue-500 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600 group-hover:text-blue-600">Kelola User</p>
+                            </button>
+                            <button onclick="navigateTo('students')" class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition duration-200 group">
+                                <i class="fas fa-user-plus text-2xl text-gray-400 group-hover:text-green-500 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600 group-hover:text-green-600">Kelola Siswa</p>
+                            </button>
+                            <button onclick="navigateTo('attendance-reports')" class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-yellow-500 hover:bg-yellow-50 transition duration-200 group">
+                                <i class="fas fa-clipboard-list text-2xl text-gray-400 group-hover:text-yellow-500 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600 group-hover:text-yellow-600">Laporan Absensi</p>
+                            </button>
+                            <button onclick="navigateTo('teacher-status')" class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition duration-200 group">
+                                <i class="fas fa-user-check text-2xl text-gray-400 group-hover:text-purple-500 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600 group-hover:text-purple-600">Status Guru</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Categories -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Kategori Absensi Siswa</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-check text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-green-600">${presentCount}</p>
+                                <p class="text-sm text-green-700">Hadir</p>
+                                <p class="text-xs text-green-600">${totalAttendance > 0 ? ((presentCount/totalAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                            <div class="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+                                <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-times text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-red-600">${absentCount}</p>
+                                <p class="text-sm text-red-700">Alpha</p>
+                                <p class="text-xs text-red-600">${totalAttendance > 0 ? ((absentCount/totalAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                            <div class="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                                <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-thermometer-half text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-yellow-600">${sickCount}</p>
+                                <p class="text-sm text-yellow-700">Sakit</p>
+                                <p class="text-xs text-yellow-600">${totalAttendance > 0 ? ((sickCount/totalAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                            <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-hand-paper text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-blue-600">${permitCount}</p>
+                                <p class="text-sm text-blue-700">Izin</p>
+                                <p class="text-xs text-blue-600">${totalAttendance > 0 ? ((permitCount/totalAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Aktivitas Terbaru</h3>
+                        <div class="space-y-3">
+                            ${database.attendance.slice(-5).reverse().map(att => {
+                                const student = database.students.find(s => s.id === att.studentId);
+                                const teacher = database.teachers.find(t => t.id === att.teacherId);
+                                return `
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-3 h-3 rounded-full ${att.status === 'hadir' ? 'bg-green-500' : att.status === 'alpha' ? 'bg-red-500' : 'bg-yellow-500'}"></div>
+                                            <span class="text-sm font-medium">${student?.name}</span>
+                                            <span class="text-sm text-gray-500">- ${att.subject} (${att.status})</span>
+                                        </div>
+                                        <span class="text-xs text-gray-500">${att.date} ${att.time}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGuruDashboard() {
+            return `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-chalkboard-teacher text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Dashboard Guru</h3>
+                    <p class="text-gray-500">Selamat datang, ${currentUser.name}!</p>
+                    <p class="text-gray-400 mt-2">Mata Pelajaran: ${currentUser.subject}</p>
+                </div>
+            `;
+        }
+
+        function renderWaliDashboard() {
+            const classAttendance = database.attendance.filter(a => a.class === currentUser.class);
+            const presentCount = classAttendance.filter(a => a.status === 'hadir').length;
+            const absentCount = classAttendance.filter(a => a.status === 'alpha').length;
+            const sickCount = classAttendance.filter(a => a.status === 'sakit').length;
+            const permitCount = classAttendance.filter(a => a.status === 'izin').length;
+            const totalClassAttendance = classAttendance.length;
+            const classStudents = database.students.filter(s => s.class === currentUser.class);
+            
+            return `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-3xl font-bold text-gray-900">Dashboard Wali Kelas ${currentUser.class}</h2>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                    </div>
+                    
+                    <!-- Class Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                    <i class="fas fa-users text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Siswa Kelas ${currentUser.class}</p>
+                                    <p class="text-2xl font-bold text-gray-900">${classStudents.length}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                    <i class="fas fa-clipboard-check text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Record Absensi</p>
+                                    <p class="text-2xl font-bold text-gray-900">${totalClassAttendance}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Categories for Class -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Kategori Absensi Kelas ${currentUser.class}</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-check text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-green-600">${presentCount}</p>
+                                <p class="text-sm text-green-700">Hadir</p>
+                                <p class="text-xs text-green-600">${totalClassAttendance > 0 ? ((presentCount/totalClassAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                            <div class="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+                                <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-times text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-red-600">${absentCount}</p>
+                                <p class="text-sm text-red-700">Alpha</p>
+                                <p class="text-xs text-red-600">${totalClassAttendance > 0 ? ((absentCount/totalClassAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                            <div class="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                                <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-thermometer-half text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-yellow-600">${sickCount}</p>
+                                <p class="text-sm text-yellow-700">Sakit</p>
+                                <p class="text-xs text-yellow-600">${totalClassAttendance > 0 ? ((sickCount/totalClassAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                            <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-hand-paper text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-blue-600">${permitCount}</p>
+                                <p class="text-sm text-blue-700">Izin</p>
+                                <p class="text-xs text-blue-600">${totalClassAttendance > 0 ? ((permitCount/totalClassAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <button onclick="navigateTo('class-attendance')" class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition duration-200 group">
+                                <i class="fas fa-eye text-2xl text-gray-400 group-hover:text-blue-500 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600 group-hover:text-blue-600">Lihat Absensi Kelas</p>
+                            </button>
+                            <button onclick="navigateTo('teacher-status')" class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition duration-200 group">
+                                <i class="fas fa-user-check text-2xl text-gray-400 group-hover:text-purple-500 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600 group-hover:text-purple-600">Status Kehadiran Guru</p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderKepalaDashboard() {
+            const totalStudents = database.students.length;
+            const totalTeachers = database.teachers.length;
+            const totalAttendance = database.attendance.length;
+            const presentCount = database.attendance.filter(a => a.status === 'hadir').length;
+            const absentCount = database.attendance.filter(a => a.status === 'alpha').length;
+            const sickCount = database.attendance.filter(a => a.status === 'sakit').length;
+            const permitCount = database.attendance.filter(a => a.status === 'izin').length;
+            const todayAttendance = database.attendance.filter(a => a.date === new Date().toISOString().split('T')[0]).length;
+            
+            return `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-3xl font-bold text-gray-900">Dashboard Kepala Sekolah</h2>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                    </div>
+                    
+                    <!-- School Overview Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                    <i class="fas fa-users text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Siswa</p>
+                                    <p class="text-2xl font-bold text-gray-900">${totalStudents}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                    <i class="fas fa-chalkboard-teacher text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Guru</p>
+                                    <p class="text-2xl font-bold text-gray-900">${totalTeachers}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                                    <i class="fas fa-clipboard-list text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Record Absensi</p>
+                                    <p class="text-2xl font-bold text-gray-900">${totalAttendance}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                                    <i class="fas fa-calendar-check text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Absensi Hari Ini</p>
+                                    <p class="text-2xl font-bold text-gray-900">${todayAttendance}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Overall Attendance Categories -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Kategori Absensi Keseluruhan Sekolah</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-check text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-green-600">${presentCount}</p>
+                                <p class="text-sm text-green-700">Hadir</p>
+                                <p class="text-xs text-green-600">${totalAttendance > 0 ? ((presentCount/totalAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                            <div class="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+                                <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-times text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-red-600">${absentCount}</p>
+                                <p class="text-sm text-red-700">Alpha</p>
+                                <p class="text-xs text-red-600">${totalAttendance > 0 ? ((absentCount/totalAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                            <div class="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                                <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-thermometer-half text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-yellow-600">${sickCount}</p>
+                                <p class="text-sm text-yellow-700">Sakit</p>
+                                <p class="text-xs text-yellow-600">${totalAttendance > 0 ? ((sickCount/totalAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                            <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <i class="fas fa-hand-paper text-white text-xl"></i>
+                                </div>
+                                <p class="text-2xl font-bold text-blue-600">${permitCount}</p>
+                                <p class="text-sm text-blue-700">Izin</p>
+                                <p class="text-xs text-blue-600">${totalAttendance > 0 ? ((permitCount/totalAttendance)*100).toFixed(1) : 0}%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <button onclick="navigateTo('all-attendance')" class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition duration-200 group">
+                                <i class="fas fa-users text-2xl text-gray-400 group-hover:text-blue-500 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600 group-hover:text-blue-600">Absensi Siswa</p>
+                            </button>
+                            <button onclick="navigateTo('teacher-summary')" class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition duration-200 group">
+                                <i class="fas fa-chalkboard-teacher text-2xl text-gray-400 group-hover:text-green-500 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600 group-hover:text-green-600">Ringkasan Guru</p>
+                            </button>
+                            <button onclick="navigateTo('teacher-status')" class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition duration-200 group">
+                                <i class="fas fa-user-check text-2xl text-gray-400 group-hover:text-purple-500 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-600 group-hover:text-purple-600">Status Kehadiran Guru</p>
+                            </button>
+                            <div class="p-4 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+                                <i class="fas fa-chart-line text-2xl text-gray-300 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-400">Analisis Trend</p>
+                                <p class="text-xs text-gray-400">Segera hadir</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Placeholder functions for other features
+        function renderAttendanceReports() {
+            const mainContent = document.getElementById('mainContent');
+            mainContent.innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Laporan Absensi Siswa</h2>
+
+                    <!-- Filters -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Filter Laporan</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label for="filterName" class="block text-sm font-medium text-gray-700 mb-2">Nama Siswa</label>
+                                <input type="text" id="filterName" placeholder="Cari nama siswa..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="filterNISN" class="block text-sm font-medium text-gray-700 mb-2">NISN</label>
+                                <input type="text" id="filterNISN" placeholder="Cari NISN..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="filterClass" class="block text-sm font-medium text-gray-700 mb-2">Kelas</label>
+                                <select id="filterClass" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Semua Kelas</option>
+                                    <option value="X-1">X-1</option>
+                                    <option value="X-2">X-2</option>
+                                    <option value="XI-1">XI-1</option>
+                                    <option value="XI-2">XI-2</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label for="filterSubject" class="block text-sm font-medium text-gray-700 mb-2">Mata Pelajaran</label>
+                                <select id="filterSubject" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Semua Mata Pelajaran</option>
+                                    <option value="Matematika">Matematika</option>
+                                    <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                                    <option value="Fisika">Fisika</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="filterDateFrom" class="block text-sm font-medium text-gray-700 mb-2">Dari Tanggal</label>
+                                <input type="date" id="filterDateFrom" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="filterDateTo" class="block text-sm font-medium text-gray-700 mb-2">Sampai Tanggal</label>
+                                <input type="date" id="filterDateTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="filterAttendanceReports()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                                    <i class="fas fa-search mr-2"></i>Filter
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex space-x-2">
+                            <button onclick="exportAttendanceToExcel()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200">
+                                <i class="fas fa-file-excel mr-2"></i>Export Excel
+                            </button>
+                            <button onclick="resetAttendanceFilters()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition duration-200">
+                                <i class="fas fa-refresh mr-2"></i>Reset Filter
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Results Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900">Hasil Laporan</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Siswa</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NISN</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kelas</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mata Pelajaran</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendanceReportsTableBody" class="bg-white divide-y divide-gray-200">
+                                    ${database.attendance.map(att => {
+                                        const student = database.students.find(s => s.id === att.studentId);
+                                        return `
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${att.date}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${att.time}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${student?.name}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student?.nisn}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${att.class}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${att.subject}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <span class="px-2 py-1 text-xs rounded-full ${
+                                                        att.status === 'hadir' ? 'bg-green-100 text-green-800' :
+                                                        att.status === 'alpha' ? 'bg-red-100 text-red-800' :
+                                                        'bg-yellow-100 text-yellow-800'
+                                                    }">${att.status}</span>
+                                                </td>
+                                                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">${att.location}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Utility Functions
+        function showNotification(message, type = 'info') {
+            const notifications = document.getElementById('notifications');
+            const notification = document.createElement('div');
+            notification.className = `notification p-4 rounded-lg shadow-lg text-white ${
+                type === 'success' ? 'bg-green-600' : 
+                type === 'error' ? 'bg-red-600' : 
+                type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} mr-2"></i>
+                        <span>${message}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            notifications.appendChild(notification);
+
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        function logout() {
+            currentUser = null;
+            if (syncInterval) clearInterval(syncInterval);
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('uniqueCode').value = '';
+            document.getElementById('uniqueCode').focus();
+            showNotification('Anda telah keluar dari sistem!', 'success');
+        }
+
+        function closeModal() {
+            document.getElementById('modalContainer').classList.add('hidden');
+        }
+
+        // Placeholder functions for other features
+        function renderUsersManagement() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-users-cog text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Kelola User Sistem</h3>
+                    <p class="text-gray-500">Fitur kelola user akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        function renderStudentsManagement() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-users text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Kelola Data Siswa</h3>
+                    <p class="text-gray-500">Fitur kelola siswa akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        function renderInputAttendance() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-camera text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Input Absensi Siswa</h3>
+                    <p class="text-gray-500">Fitur input absensi akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        function renderMyAttendanceReports() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-history text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Rekapan Absensi Saya</h3>
+                    <p class="text-gray-500">Fitur rekapan absensi akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        function renderClassAttendance() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-eye text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Absensi Kelas ${currentUser.class}</h3>
+                    <p class="text-gray-500">Fitur absensi kelas akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        function renderAllAttendance() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-users text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Absensi Siswa (Kepala Sekolah)</h3>
+                    <p class="text-gray-500">Fitur absensi siswa akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        function renderTeacherSummary() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-chalkboard-teacher text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Ringkasan Kehadiran Guru</h3>
+                    <p class="text-gray-500">Kepala sekolah dapat melihat ringkasan kehadiran guru hari ini beserta materinya</p>
+                </div>
+            `;
+        }
+
+        function renderAttendanceCategories() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-exclamation-triangle text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Kategori Kehadiran</h3>
+                    <p class="text-gray-500">Fitur kategori kehadiran akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        function renderWhatsAppMessages() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Pesan WhatsApp</h3>
+                    <p class="text-gray-500">Fitur pesan WhatsApp akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        function renderClassCategories() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-exclamation-triangle text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Kategori Kehadiran Kelas</h3>
+                    <p class="text-gray-500">Fitur kategori kehadiran kelas akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        function renderClassWhatsApp() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Pesan WhatsApp Kelas</h3>
+                    <p class="text-gray-500">Fitur pesan WhatsApp kelas akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        function renderSchoolCategories() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-exclamation-triangle text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Kategori Kehadiran Sekolah</h3>
+                    <p class="text-gray-500">Fitur kategori kehadiran sekolah akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        function renderSchoolWhatsApp() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Pesan WhatsApp Sekolah</h3>
+                    <p class="text-gray-500">Fitur pesan WhatsApp sekolah akan segera tersedia</p>
+                </div>
+            `;
+        }
+
+        // Placeholder filter functions
+        function filterAttendanceReports() {
+            showNotification('Filter laporan absensi diterapkan!', 'success');
+        }
+
+        function exportAttendanceToExcel() {
+            showNotification('Data berhasil diekspor ke Excel!', 'success');
+        }
+
+        function resetAttendanceFilters() {
+            document.getElementById('filterName').value = '';
+            document.getElementById('filterNISN').value = '';
+            document.getElementById('filterClass').value = '';
+            document.getElementById('filterSubject').value = '';
+            document.getElementById('filterDateFrom').value = '';
+            document.getElementById('filterDateTo').value = '';
+            showNotification('Filter berhasil direset!', 'success');
+        }
+
+        // Auto focus on login input and setup
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup network monitoring
+            setupNetworkMonitoring();
+            
+            // Load data from server or localStorage
+            loadFromServer().then(() => {
+                console.log('Initial data load completed');
+            });
+            
+            document.getElementById('uniqueCode').focus();
+        });
+
+        // Handle Enter key on login
+        document.getElementById('uniqueCode').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                handleLogin(event);
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'990ff5cf224cfcec',t:'MTc2MDg3MzYwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
